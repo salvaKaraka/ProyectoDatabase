@@ -1,8 +1,9 @@
 package services
 
 import (
-	"context"
-	"log"
+	"bytes"
+	"encoding/json"
+	"net/http"
 
 	"github.com/InfaFS/NLQBot/app/llm"
 	"github.com/InfaFS/NLQBot/app/messaging"
@@ -22,15 +23,42 @@ func NewBotService(llm *llm.Client, whatsapp *messaging.WhatsappClient, slack *m
 	}
 }
 
-func (b *BotService) ProcessMessage(message string) (string, error) {
-	// Aquí enviás el texto al LLM y recibís respuesta
-	ctx := context.Background()
-	response, err := b.llmClient.GenerateContent(ctx, message)
-	if err != nil {
-		log.Printf("Error generando respuesta LLM: %v", err)
-		return "", err
+// esta funcion luego tiene que abstraerse mas, por el momento voy a hacer toda la funcion aca
+func (b *BotService) ProcessMessage(messanger string, recipient string, message string) error {
+
+	type requestPayload struct {
+		Messanger string `json:"messanger"`
+		Recipient string `json:"recipient"`
+		Message   string `json:"message"`
+		SessionID string `json:"session_id"`
 	}
-	return response, nil
+
+	payload := requestPayload{
+		Messanger: messanger,
+		Recipient: recipient,
+		Message:   message,
+		SessionID: "prueba123",
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", "http://localhost:3000/input/bot", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+
 }
 
 func (b *BotService) SendWhatsappMessage(to string, message string) error {

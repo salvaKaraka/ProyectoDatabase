@@ -34,3 +34,7 @@ func (c *Client) GenerateContent(ctx context.Context, prompt string) (string, er
 	return result.Text(), nil
 
 }
+
+func (c *Client) PassMessage(messanger string, recipient string, message string) {
+	//aca tengo que hacer el post http al bot
+}

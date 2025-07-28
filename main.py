@@ -1,3 +1,60 @@
+# aca importamos las cosas necesarias para que ande como "server"
+from flask import Flask, request, jsonify
+import threading
+import requests
+
+app = Flask(__name__)
+pending_inputs = {}
+url_api = "http://localhost:5000/webhook/bot"
+recipient = "none"
+messanger = "none"
+
+
+@app.route("/input/bot", methods=["POST"])
+def receive_input():
+    global recipient, messanger
+    data = request.get_json()
+
+    session_id = data.get("session_id")
+    message = data.get("message")
+    recipient = data.get("recipient")
+    messanger = data.get("messanger")
+    print(recipient, messanger)
+    if session_id in pending_inputs:
+        pending_inputs[session_id]["message"] = message
+        pending_inputs[session_id]["event"].set()  # desbloquea
+
+        return jsonify({"status": "ok"})
+    else:
+        return jsonify({"error": "no pending input"}), 404
+
+
+def run_flask():
+    app.run(debug=False, use_reloader=False, port=3000)
+
+
+def input_http(session_id):
+    event = threading.Event()
+    pending_inputs[session_id] = {"event": event, "message": None}
+    print(f"[Esperando input para session: {session_id}]", flush=True)
+    event.wait()  # espera sincrónicamente
+    msg = pending_inputs[session_id]["message"]
+    del pending_inputs[session_id]
+    return msg
+
+
+def send_post(url, msg: str):
+    try:
+        print(messanger, recipient)
+        data = {"message": msg, "messanger": messanger, "recipient": recipient}
+        response = requests.post(url, json=data)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error en POST: {e}")
+        return None
+
+
 import sqlite3
 from sqlalchemy import create_engine
 
@@ -179,7 +236,10 @@ def loop_consulta_sql(
             nuevas_respuestas = {}
             for pregunta in preguntas.split("\n"):
                 if pregunta.strip():
-                    user_input = input(f"{pregunta.strip()} 👉 ")
+                    message = f"{pregunta.strip()} 👉"
+                    send_post(url_api, message)
+                    user_input = input_http("prueba123")
+
                     nuevas_respuestas[pregunta.strip()] = user_input
 
             respuestas_usuario.update(nuevas_respuestas)
@@ -226,11 +286,15 @@ def loop_consulta_sql(
         print(explicacion)
 
         # Paso 4: Feedback
-        feedback = input(
+        feedback_answer = (
             "\n"
             + explicacion
             + "\n✍️ ¿Te resultó útil esta explicación? Podés responder con una frase 👉 "
-        ).strip()
+        )
+
+        send_post(url_api, feedback_answer)
+        feedback = input_http("prueba123")
+
         clasificacion = (
             clasificador_chain.run({"respuesta_usuario": feedback}).strip().lower()
         )
@@ -248,11 +312,18 @@ def loop_consulta_sql(
         )
 
         if "útil" == clasificacion:
-            print("✅ ¡Gracias! Me alegra que te haya servido.")
+
+            message = "✅ ¡Gracias! Me alegra que te haya servido."
+            send_post(url_api, message)
             return resultado, historial
 
         # Paso 5: Reformulación si no fue útil
-        print("🔁 Gracias por tu comentario. Vamos a intentar mejorar la consulta...")
+
+        message = (
+            "🔁 Gracias por tu comentario. Vamos a intentar mejorar la consulta..."
+        )
+
+        send_post(url_api, message)
 
         contexto_historial = ""
         for h in historial:
@@ -275,13 +346,23 @@ def loop_consulta_sql(
         print(f"\n📌 Reformulando la pregunta como:\n{nueva_pregunta}\n")
         prompt_actual = nueva_pregunta
         intentos += 1
+    data = {
+        "message": "\n❌ No pudimos entender bien tu consulta después de varios intentos."
+    }
+    send_post(url_api, data)
 
-    print("\n❌ No pudimos entender bien tu consulta después de varios intentos.")
     return None, historial
 
 
 if __name__ == "__main__":
-    pregunta = input("🧑‍💻 ¿Qué consulta querés hacer? 👉 ")
+    # Flask en hilo separado para que pueda correr como server y escuchar preguntas
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    # message = "🧑‍💻 ¿Qué consulta querés hacer? 👉 "
+    # send_post(url_api, message)
+    pregunta = input_http("prueba123")
+
     resultado, historial = loop_consulta_sql(
         pregunta,
         clarificador_chain,

@@ -25,6 +25,7 @@ func main() {
 	r.GET("/webhook/whatsapp", handler.VerifyWhatsappWebhook)
 	r.POST("/webhook/whatsapp", handler.HandleWhatsappWebhook)
 	r.POST("/webhook/slack", handler.HandleSlackWebhook)
+	r.POST("/webhook/bot", handler.ReceiveMessage)
 
 	if err := r.Run(cfg.Port); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
