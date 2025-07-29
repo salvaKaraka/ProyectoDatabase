@@ -3,6 +3,8 @@
 Funciona con LangChain para conectar gpt-4o con una base de datos relacional.
 El agente resultante toma consultas en lenguaje natural y responde de la misma manera, utilizando la base de datos.
 
+En un hilo/proceso esta corriendo el servidor en flask mientras que en otro el proceso que espera los inputs. Tiene un enfoque asincróno el cual le permite "esperar" por un input manejando una especie de cola, cuando llega un post adecuado con un json en particular (proveniente de la api) entonces se carga el mensaje con los datos extras y se activa el evento el cual estaba esperando el hilo del proceso, asi hasta que termina.
+
 # Funcionamiento de la API
 
 La api provee 4 endpoints principales, de los cuales
