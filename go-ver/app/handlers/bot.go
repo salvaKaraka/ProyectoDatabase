@@ -22,13 +22,12 @@ func (h *Handler) ReceiveMessage(c *gin.Context) {
 		return
 	}
 
+	c.Status(http.StatusOK)
+
 	if body.Messanger == "whatsapp" {
 		h.BotService.SendWhatsappMessage(body.Recipient, body.Message)
 	} else {
 		h.BotService.SendSlackMessage(body.Recipient, body.Message)
 	}
-
-	log.Println(body)
-	c.Status(http.StatusOK)
 
 }
