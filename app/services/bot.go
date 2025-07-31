@@ -62,10 +62,10 @@ func (b *BotService) ProcessMessage(message string) (string, error) {
 
 	// Parseamos el JSON
 	type responsePayload struct {
-		Status      string `json:"status"`
-		Result      string `json:"result"`      // suponemos que es string
-		Explicacion string `json:"explicacion"` // no lo usamos, pero lo dejamos por claridad
-		Questions   string `json:"questions"`
+		Status      string   `json:"status"`
+		Result      string   `json:"result"`      // suponemos que es string
+		Explicacion string   `json:"explicacion"` // no lo usamos, pero lo dejamos por claridad
+		Questions   []string `json:"questions"`
 	}
 
 	var parsedResponse responsePayload
@@ -78,10 +78,15 @@ func (b *BotService) ProcessMessage(message string) (string, error) {
 		return "", fmt.Errorf("error del servidor: %s", parsedResponse.Status)
 	}
 
-	if parsedResponse.Questions != "" {
-		return parsedResponse.Questions, nil
-	}
+	//este parseo se realiza ya que del backend de python recibimos un array de strings
+	if parsedResponse.Questions != nil {
+		var res string
+		for i := 0; i < len(parsedResponse.Questions); i++ {
+			res += parsedResponse.Questions[i] + " "
+		}
 
+		return res, nil
+	}
 	// Retornamos solo el resultado
 	return parsedResponse.Result, nil
 }
