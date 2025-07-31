@@ -35,12 +35,12 @@ func (h *Handler) HandleSlackWebhook(c *gin.Context) {
 				channel := event["channel"].(string)
 
 				// response := "Estoy procesando tu consulta..."
-				err := h.BotService.ProcessMessage("slack", channel, text)
-				// if err != nil {
-				// response = "No se pudo realizar tu consulta"
-				// }
+				response, err := h.BotService.ProcessMessage(text)
+				if err != nil {
+					response = "No se pudo realizar tu consulta, lo sentimos"
+				}
 
-				// err = h.BotService.SendSlackMessage(channel, response)
+				err = h.BotService.SendSlackMessage(channel, response)
 				if err != nil {
 					fmt.Println(err)
 				}

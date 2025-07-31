@@ -89,14 +89,11 @@ func (h *Handler) HandleWhatsappWebhook(c *gin.Context) {
 
 		from = utils.ParseNumber(from)
 
-		// response := "Estoy procesando tu consulta..."
-
 		//despues hay que volver a usar esto bien
-		_ = h.BotService.ProcessMessage("whatsapp", from, text)
-		// if err != nil {
-		// 	response = "No se pudo realizar tu consulta"
-		// }
-
-		// h.BotService.SendWhatsappMessage(from, response)
+		response, err := h.BotService.ProcessMessage(text)
+		if err != nil {
+			response = "No se pudo realizar tu consulta, lo sentimos"
+		}
+		h.BotService.SendWhatsappMessage(from, response)
 	}()
 }
