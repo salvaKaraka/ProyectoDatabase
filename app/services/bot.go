@@ -40,7 +40,7 @@ func (b *BotService) ProcessMessage(message string) (string, error) {
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", "http://localhost:8000/query/meinlup/f1", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", "http://bot:8000/query/meinlup/f1", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}

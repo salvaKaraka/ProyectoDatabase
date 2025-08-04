@@ -1,0 +1,13 @@
+
+services:
+  api:
+    build: .
+    ports:
+      - "5000:5000"
+    networks:
+      - shared
+
+networks:
+  shared:
+    external: true
+    name: proyectodatabase_default
