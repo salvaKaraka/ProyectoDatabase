@@ -29,23 +29,30 @@ func (h *Handler) HandleSlackWebhook(c *gin.Context) {
 	if data["type"] == "event_callback" {
 		//usamos una go func porque tenemos que devolver rapido el status OK al server (sino manda de vuelta mensajes)
 		go func() {
-			event := data["event"].(map[string]interface{})
-			if event["type"] == "message" && event["bot_id"] == nil {
-				text := event["text"].(string)
-				channel := event["channel"].(string)
+			event, ok := data["event"].(map[string]interface{})
+			if !ok {
+				fmt.Println("event is missing or not a map")
+				return
+			}
 
-				// response := "Estoy procesando tu consulta..."
+			// Asegurate que sea mensaje y no venga de un bot
+			eventType, _ := event["type"].(string)
+			_, hasBotID := event["bot_id"]
+			text, hasText := event["text"].(string)
+			channel, hasChannel := event["channel"].(string)
+
+			if eventType == "message" && !hasBotID && hasText && hasChannel {
 				response, err := h.BotService.ProcessMessage(text)
 				if err != nil {
 					response = "No se pudo realizar tu consulta, lo sentimos"
 				}
 
-				err = h.BotService.SendSlackMessage(channel, response)
-				if err != nil {
-					fmt.Println(err)
+				if err := h.BotService.SendSlackMessage(channel, response); err != nil {
+					fmt.Println("error al enviar mensaje:", err)
 				}
 			}
 		}()
+
 	}
 
 	c.Status(http.StatusOK)

@@ -40,12 +40,12 @@ func (b *BotService) ProcessMessage(message string) (string, error) {
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", "http://bot:8000/query/meinlup/f1", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", "http://bot:8000/query/acme/chinook", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", "qRkHi9L046ehpfoydFDmQCxz_KdCOf7aUGqhiUQHn7s")
+	req.Header.Set("x-api-key", "JtPUQsruOfVGk4CVDi3IyhaUNwWjBl_-27BHqxP4z5A")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
